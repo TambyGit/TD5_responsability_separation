@@ -85,23 +85,28 @@ public class IngredientController {
     @GetMapping("/{id}/stockMovements")
     public ResponseEntity<?> getStockMovements(
             @PathVariable int id,
-            @RequestParam Instant from,
-            @RequestParam Instant to) {
+            @RequestParam String from,
+            @RequestParam String to) {
+
 
         try {
+            Instant instantFrom = Instant.parse(from);
+            Instant instantTo = Instant.parse(to);
+
             List<StockMovement> movements = ingredientRepository
-                    .findStockMovementsByIngredientIdBetween(id, from, to);
+                    .findStockMovementsByIngredientIdBetween(id, instantFrom, instantTo);
             return ResponseEntity.ok(movements);
 
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("is not found")) {
+                e.printStackTrace();
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body("Ingredient.id={id) is not found");
+                        .body("Ingredient.id=" + id + " is not found");
             }
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la récupération des mouvements de stock");
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Format de date invalide. Utilisez le format ISO 8601 : 2024-01-01T00:00:00Z");
         }
     }
 

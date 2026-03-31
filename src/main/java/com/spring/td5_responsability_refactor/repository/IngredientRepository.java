@@ -36,23 +36,18 @@ public class IngredientRepository {
 
     private StockMovement mapStockMovement(ResultSet rs, int rowNum) throws SQLException {
         StockMovement sm = new StockMovement();
-
         sm.setId(rs.getInt("id"));
 
         StockValue stockValue = new StockValue();
-        stockValue.setUnit(UnitEnum.valueOf(rs.getString("unit")));
         stockValue.setQuantity(rs.getDouble("quantity"));
-
+        stockValue.setUnit(UnitEnum.valueOf(rs.getString("unit")));
         sm.setValue(stockValue);
-        sm.setCreationDate(rs.getObject("creation_date", Instant.class));
 
-        String movementTypeStr = rs.getString("movement_type");
-        if (movementTypeStr != null) {
-            try {
-                sm.setMovementType(MovementTypeEnum.valueOf(movementTypeStr.trim().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                System.err.println("Invalid movement_type: " + movementTypeStr);
-            }
+        sm.setCreationDate(rs.getTimestamp("creation_datetime").toInstant()); // ← creation_datetime
+
+        String typeStr = rs.getString("type"); // ← type (pas movement_type)
+        if (typeStr != null) {
+            sm.setMovementType(MovementTypeEnum.valueOf(typeStr.trim().toUpperCase()));
         }
 
         return sm;
@@ -143,18 +138,17 @@ public class IngredientRepository {
         }
 
         String sql = """
-                SELECT sm.id, 
-                       sm.value, 
-                       sm.unit, 
-                       sm.quantity, 
-                       sm.movement_type, 
-                       sm.creation_date
-                FROM stock_movement sm
-                WHERE sm.ingredient_id = ? 
-                  AND sm.creation_date >= ? 
-                  AND sm.creation_date <= ?
-                ORDER BY sm.creation_date ASC
-                """;
+    SELECT sm.id,
+           sm.quantity,
+           sm.unit,
+           sm.type,
+           sm.creation_datetime
+    FROM stock_movement sm
+    WHERE sm.id_ingredient = ?
+      AND sm.creation_datetime >= ?
+      AND sm.creation_datetime <= ?
+    ORDER BY sm.creation_datetime ASC
+    """;
 
         return jdbcTemplate.query(sql, this::mapStockMovement, ingredientId, from, to);
     }
