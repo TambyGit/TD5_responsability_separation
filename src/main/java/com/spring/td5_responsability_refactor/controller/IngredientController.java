@@ -104,4 +104,26 @@ public class IngredientController {
                     .body("Erreur lors de la récupération des mouvements de stock");
         }
     }
+
+    @PostMapping("/{id}/stockMovements")
+    public ResponseEntity<?> addStockMovements(
+            @PathVariable int id,
+            @RequestBody List<StockMovement> movements) {
+
+        try {
+            List<StockMovement> saved = ingredientRepository.addStockMovements(id, movements);
+            return ResponseEntity.ok(saved);
+
+        } catch (RuntimeException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("is not found")) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(msg);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(msg != null ? msg : "Erreur lors de la création des mouvements");
+        }
+    }
 }
