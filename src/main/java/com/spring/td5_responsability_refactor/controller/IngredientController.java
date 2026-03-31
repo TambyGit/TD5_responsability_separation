@@ -1,6 +1,7 @@
 package com.spring.td5_responsability_refactor.controller;
 
 import com.spring.td5_responsability_refactor.entity.Ingredient;
+import com.spring.td5_responsability_refactor.entity.StockMovement;
 import com.spring.td5_responsability_refactor.entity.StockValue;
 import com.spring.td5_responsability_refactor.entity.enums.UnitEnum;
 import com.spring.td5_responsability_refactor.repository.IngredientRepository;
@@ -78,6 +79,29 @@ public class IngredientController {
             return  ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/stockMovements")
+    public ResponseEntity<?> getStockMovements(
+            @PathVariable int id,
+            @RequestParam Instant from,
+            @RequestParam Instant to) {
+
+        try {
+            List<StockMovement> movements = ingredientRepository
+                    .findStockMovementsByIngredientIdBetween(id, from, to);
+            return ResponseEntity.ok(movements);
+
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("is not found")) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body("Ingredient.id={id) is not found");
+            }
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la récupération des mouvements de stock");
         }
     }
 }
